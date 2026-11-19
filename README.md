@@ -142,7 +142,7 @@ flowchart LR
 | # | Fuente | Nodo | Para qué |
 |---|---|---|---|
 | 1 | **Formulario web** | Webhook POST `/consulta-final-auto-concierge` | Consultas de clientes desde la web (canal de la PE2/PE3) |
-| 2 | **Mail** | Gmail Trigger (`to:joanlraymundo+autoconcierge@gmail.com`, cada 1 min) | Consultas que llegan por correo. En producción sería `ventas@…` |
+| 2 | **Mail** | Gmail Trigger (`to:joanlraymundo+autoconcierge@gmail.com -from:me`, cada 1 min) | Consultas que llegan por correo. En producción sería `ventas@…`. `-from:me` evita que el bot procese sus propias respuestas (hallazgo 8) |
 | 3 | **Google Drive** | Drive Trigger (archivo nuevo/modificado) + búsqueda manual | Fuente de los documentos de la base de conocimiento |
 | 4 | **Google Sheets** | Herramienta «Consultar stock» y lectura de «Config» | Stock en tiempo real y datos oficiales de pago |
 | 5 | **Supabase (pgvector)** | Supabase Vector Store | Búsqueda semántica sobre los documentos |
@@ -385,10 +385,10 @@ Devolvé exactamente estos 11 campos, con estos nombres: tipo, modelo_detectado,
 
 | Prueba | Cómo se provocó | Resultado esperado | Resultado observado |
 |---|---|---|---|
-| F1 · Ollama apagado | Se cerró Ollama y se corrió el caso 3 | `rag_estado = error` → deriva y el cliente recibe respuesta | ⏳ |
+| F1 · Ollama apagado | Se cerró Ollama y se corrió el caso 3 | `rag_estado = error` → deriva y el cliente recibe respuesta | ✅ WEB-261119-81: DERIVADA, mail al vendedor y respuesta al cliente («un asesor te va a contactar»), **sin inventar cifras**. ⚠️ Dos observaciones: la latencia fue de **204 s**, porque el cliente de embeddings reintenta internamente con espera creciente antes de fallar, y el estado quedó como `sin_resultados` en lugar de `error`, porque la falla del sub-nodo llegó como salida vacía. La protección funcionó igual: sin contexto, el agente deriva. Mejora en 11.7. |
 | F2 · Falla del LLM | Ocurrió en las pruebas, sin provocarla: Bad request (20b) y 429 (120b) | REVISAR, mail y respuesta de respaldo | ✅ WEB-261119-51 y WEB-261119-67: HTTP 200, respuesta de respaldo, mail «[REVISAR]» y fila en la hoja |
-| F3 · CBU inválido en Config | CBU = `12345` y se corrió el caso 4 | No se envía ningún CBU; estado «REVISAR · datos de pago…» | ⏳ |
-| F4 · Error no controlado | WF1 con la tabla `documentos` (no existe) y se editó un documento | Fila en «Errores» y mail «[ERROR n8n]» | ⏳ |
+| F3 · CBU inválido en Config | CBU = `12345` y se corrió el caso 4 | No se envía ningún CBU; estado «REVISAR · datos de pago…» | ✅ WEB-261119-82: estado «REVISAR · datos de pago no disponibles o inválidos». La respuesta **no trae CBU**: «Los datos oficiales para la seña te los envía un asesor». Se avisó al vendedor. |
+| F4 · Error no controlado | WF1 con la tabla `documentos` (no existe) y se editó un documento | Fila en «Errores» y mail «[ERROR n8n]» | ✅ Ejecución 83 (disparada por el **Drive Trigger**, en producción): fila en «Errores» (`relation "documentos" does not exist`, nodo «Borrar fragmentos anteriores», enlace a la ejecución) y mail «[ERROR n8n] … · nodo Borrar fragmentos anteriores». |
 
 ### 7.3 Hallazgos reales durante la construcción (fallos que aparecieron y cómo se corrigieron)
 
@@ -399,6 +399,7 @@ Devolvé exactamente estos 11 campos, con estos nombres: tipo, modelo_detectado,
 5. **La memoria contamina la regresión.** En la regresión v2, los casos 1 y 3 devolvieron **la misma respuesta de antes, palabra por palabra**, aunque el prompt había cambiado. El resumen del agente decía «información ya proporcionada»: el modelo leyó su respuesta anterior en la memoria de Postgres. **Corrección:** vaciar la memoria antes de cada regresión (`delete from n8n_chat_memoria;`).
 6. **Tablas de PDF y alucinación de cifras.** Con el texto extraído del PDF del Sportage, el agente le asignó al motor de nafta la potencia del diésel y llamó «192 cv» a un torque de 192 Nm. Las reglas del prompt no alcanzaron. **Corrección en la fuente:** el documento 07 «Fichas resumidas», armado desde los PDF oficiales con cada dato asociado a su versión. Resultado v4: «EX 2.0 nafta 154 cv · X-Line 2.0 diésel 183 cv», correcto.
 7. **Límite de Groq (429).** Con 60 s entre casos, el plan gratis de 120b se quedó sin tokens por minuto. El sistema lo manejó (punto de falla 2). El script pasó a 90 s. En producción: plan pago de Groq.
+8. **Loop en el canal de mail.** La prueba del caso 11 se mandó desde la misma cuenta a la dirección `+autoconcierge`. El bot respondió en el hilo y su respuesta, que sale de la misma cuenta y va a la misma dirección, volvió a entrar por el Gmail Trigger como una consulta nueva (fila MAIL-261119-86). **Corrección:** filtro `-from:me` en el trigger, para que el sistema nunca procese mensajes que salen de su propia cuenta. **Lección:** en todo canal donde el sistema responde, hay que excluir sus propias salidas de la entrada.
 
 ---
 
@@ -418,7 +419,7 @@ Devolvé exactamente estos 11 campos, con estos nombres: tipo, modelo_detectado,
 | 8 | «¿Y en gris?» (seguimiento) | La memoria entiende Seltos EX | ✅ | ✅ | ✅ |
 | 9 | ¿Cuántas plazas tiene la Carnival? | RAG ficha | ❌ consultaba stock → derivó | ⚠️ ya no consulta stock; deriva sin inventar | ⚠️ igual: el fragmento del doc. 07 queda 4.º (límite conocido, sección 11) |
 | 10 | ¿Cuánto consume el Sorento? | No hay ficha → deriva | ⚠️ nombre completo | ✅ | ✅ |
-| 11 | Consulta por mail | Respuesta en el mismo hilo · canal email | ⏳ | | |
+| 11 | Mail «¿Cada cuántos km se hace el service del Sportage?» | Respuesta en el mismo hilo · canal email | — | — | ✅ MAIL-261119-85: RAG doc. 01 (0,758) → «cada 10.000 km o 12 meses…», respondido **en el mismo hilo**, original marcado como leído, 14,9 s. ⚠️ Generó un loop (hallazgo 8, ya corregido) |
 
 ### 8.2 Métricas objetivo vs. observado
 
@@ -439,23 +440,27 @@ Todas están en la carpeta `/capturas`.
 
 | Archivo | Qué muestra |
 |---|---|
-| `01-wf1-canvas.png` | Canvas de WF1 · Indexación |
+| `01-wf1-canvas.png` | Canvas de WF1 · Indexación, ejecución completa (14 archivos, 72 fragmentos) |
 | `02-wf2-canvas.png` | Canvas de WF2 · Atención (completo) |
 | `03-wf3-canvas.png` | Canvas de WF3 · Error Trigger |
-| `04-wf4-canvas.png` | Canvas de WF4 · Evaluación del RAG |
-| `05-indexacion-hoja.png` | Hoja «Indexacion» con los 15 archivos en OK (incluido el 07, indexado automáticamente) |
-| `06-supabase-documents.png` | Tabla `documents` con fragmentos con encabezado y metadata |
-| `07-evaluacion-rag.png` | Hoja «Evaluacion RAG»: resúmenes v1, v2 y v3 |
-| `08-wf2-ejecucion-ok.png` | Ejecución exitosa de WF2 (caso 1) con todos los nodos en verde |
-| `09-consultas-final.png` | Hoja «Consultas Final» con la regresión |
+| `04-wf4-canvas-ejecucion.png` | Canvas de WF4 y salida de la evaluación v3 |
+| `05-indexacion-hoja-auto-07.png` | Hoja «Indexacion»: el documento 07 se indexó **solo** (Drive Trigger, 17:34) |
+| `06a-supabase-documents-encabezado.png` | Tabla `documents`: fragmentos con `search_document: [título]` |
+| `06b-supabase-fragmentos-por-archivo.png` | Fragmentos por archivo (metadata `archivo`) |
+| `07-evaluacion-rag-v1-v2-v3.png` · `07b-…` | Hoja «Evaluacion RAG»: v1 → v2 → v3 (13/13) |
+| `08-wf2-ejecucion-ok.png` | Ejecución exitosa de WF2 con todos los nodos en verde |
+| `09-consultas-final.png` · `09a/09b-regresion-*.png` | Hoja «Consultas Final» y salidas de las regresiones v1 y v2 en la Terminal |
 | `10-mails-vendedor.png` | Avisos al vendedor ([ALTA] / [REVISAR]) |
-| `11-caso4-datos-pago.png` | Respuesta con el CBU tomado de Config |
-| `12-error-groq-json.png` | Error real de 20b: «Failed to parse tool call arguments as JSON» |
-| `13-error-429-respaldo.png` | 429 → respuesta de respaldo + mail |
-| `14-f1-ollama-apagado.png` | Prueba F1 |
-| `15-f3-cbu-invalido.png` | Prueba F3 |
-| `16-f4-error-trigger.png` | Prueba F4: hoja «Errores» + mail |
+| `12a-error-groq-20b-json.png` · `12b/12c/12d-f2-*.png` | F2: error real de 20b («Failed to parse tool call arguments as JSON») → hoja, Terminal y mail de respaldo |
+| `13a-error-tool-json-429.png` · `13b-error-schema-reintento-ok.png` | Llamadas a herramientas fallidas con 120b: la primera terminó en 429 → respaldo; la segunda se recuperó con el reintento |
+| `14a/14b-f1-ollama-apagado-*.png` | F1: Terminal y hoja |
+| `15a/15b-f3-cbu-invalido-*.png` | F3: Terminal y hoja |
+| `16a/16b-f4-error-trigger-*.png` | F4: hoja «Errores» y mail «[ERROR n8n]» |
 | `17-canal-mail.png` | Consulta por mail respondida en el mismo hilo |
+| `h1-credencial-sheets-vencida.png` | Hallazgo 1: «needs to be reconnected» |
+| `h2-reindexacion-sin-duplicados.png` | Hallazgo 2: 55 registros después de reindexar (IDs 56 a 110) |
+| `h3-wf4-pairedItem-bug.png` | Hallazgo 3: primera corrida de WF4 con resultados mal agrupados |
+| `h4-caso1-120b-ok.png` | Caso 1 resuelto después de pasar a gpt-oss-120b |
 
 ---
 
@@ -474,6 +479,7 @@ Todas están en la carpeta `/capturas`.
 4. **WhatsApp real (pendiente de la PE4):** el mismo WF2 admite un tercer canal (WhatsApp Trigger + Send) con el esquema de «Normalizar».
 5. **Google Calendar para test drives:** el agente detecta el pedido y el flujo **revisa la disponibilidad** en el calendario del vendedor antes de crear un evento tentativo. Es una decisión con validación previa, igual que los datos de pago.
 6. **Monitoreo de la base:** correr WF4 de forma programada (semanal) y avisar si el top-3 baja del 90 %.
+7. **Falla de embeddings más rápida y mejor clasificada (de la prueba F1):** bajar los reintentos y el timeout del cliente de Ollama (hoy tarda unos 200 s en fallar), y que «Armar contexto» marque `rag_estado = error` también cuando el sub-nodo devuelve una salida vacía por una falla de conexión.
 
 ---
 
