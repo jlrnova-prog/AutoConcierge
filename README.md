@@ -399,7 +399,7 @@ Devolvé exactamente estos 11 campos, con estos nombres: tipo, modelo_detectado,
 5. **La memoria contamina la regresión.** En la regresión v2, los casos 1 y 3 devolvieron **la misma respuesta de antes, palabra por palabra**, aunque el prompt había cambiado. El resumen del agente decía «información ya proporcionada»: el modelo leyó su respuesta anterior en la memoria de Postgres. **Corrección:** vaciar la memoria antes de cada regresión (`delete from n8n_chat_memoria;`).
 6. **Tablas de PDF y alucinación de cifras.** Con el texto extraído del PDF del Sportage, el agente le asignó al motor de nafta la potencia del diésel y llamó «192 cv» a un torque de 192 Nm. Las reglas del prompt no alcanzaron. **Corrección en la fuente:** el documento 07 «Fichas resumidas», armado desde los PDF oficiales con cada dato asociado a su versión. Resultado v4: «EX 2.0 nafta 154 cv · X-Line 2.0 diésel 183 cv», correcto.
 7. **Límite de Groq (429).** Con 60 s entre casos, el plan gratis de 120b se quedó sin tokens por minuto. El sistema lo manejó (punto de falla 2). El script pasó a 90 s. En producción: plan pago de Groq.
-8. **Loop en el canal de mail.** La prueba del caso 11 se mandó desde la misma cuenta a la dirección `+autoconcierge`. El bot respondió en el hilo y su respuesta, que sale de la misma cuenta y va a la misma dirección, volvió a entrar por el Gmail Trigger como una consulta nueva (fila MAIL-261119-86). **Corrección:** filtro `-from:me` en el trigger, para que el sistema nunca procese mensajes que salen de su propia cuenta. **Lección:** en todo canal donde el sistema responde, hay que excluir sus propias salidas de la entrada.
+8. **Loop en el canal de mail.** La prueba del caso 11 se mandó desde la misma cuenta a la dirección `+autoconcierge`. El bot respondió en el hilo y su respuesta, que sale de la misma cuenta y va a la misma dirección, volvió a entrar por el Gmail Trigger como una consulta nueva. Antes de cortarlo se generaron **3 consultas extra** (filas 33 a 35 de «Consultas Final», visibles en `09-consultas-final.png`), y el hilo de `17-canal-mail.png` muestra al bot respondiéndose a sí mismo. **Corrección:** filtro `-from:me` en el trigger, para que el sistema nunca procese mensajes que salen de su propia cuenta. **Lección:** en todo canal donde el sistema responde, hay que excluir sus propias salidas de la entrada.
 
 ---
 
@@ -448,15 +448,15 @@ Todas están en la carpeta `/capturas`.
 | `06a-supabase-documents-encabezado.png` | Tabla `documents`: fragmentos con `search_document: [título]` |
 | `06b-supabase-fragmentos-por-archivo.png` | Fragmentos por archivo (metadata `archivo`) |
 | `07-evaluacion-rag-v1-v2-v3.png` · `07b-…` | Hoja «Evaluacion RAG»: v1 → v2 → v3 (13/13) |
-| `08-wf2-ejecucion-ok.png` | Ejecución exitosa de WF2 con todos los nodos en verde |
-| `09-consultas-final.png` · `09a/09b-regresion-*.png` | Hoja «Consultas Final» y salidas de las regresiones v1 y v2 en la Terminal |
+| `08-wf2-ejecucion-ok.png` | Ejecución exitosa de WF2 por el canal de mail: Gmail Trigger → RAG → agente → registro → respuesta en el hilo, todo en verde |
+| `09-consultas-final.png` · `09a/09b-regresion-*.png` | Hoja «Consultas Final» (filas de las corridas v1 a v4, F1, F3, caso 11 y loop) y salidas de las regresiones v1 y v2 en la Terminal |
 | `10-mails-vendedor.png` | Avisos al vendedor ([ALTA] / [REVISAR]) |
 | `12a-error-groq-20b-json.png` · `12b/12c/12d-f2-*.png` | F2: error real de 20b («Failed to parse tool call arguments as JSON») → hoja, Terminal y mail de respaldo |
 | `13a-error-tool-json-429.png` · `13b-error-schema-reintento-ok.png` | Llamadas a herramientas fallidas con 120b: la primera terminó en 429 → respaldo; la segunda se recuperó con el reintento |
 | `14a/14b-f1-ollama-apagado-*.png` | F1: Terminal y hoja |
 | `15a/15b-f3-cbu-invalido-*.png` | F3: Terminal y hoja |
 | `16a/16b-f4-error-trigger-*.png` | F4: hoja «Errores» y mail «[ERROR n8n]» |
-| `17-canal-mail.png` | Consulta por mail respondida en el mismo hilo |
+| `17-canal-mail.png` | Hilo «Consulta service Sportage»: consulta (18:12) y respuesta del sistema en el mismo hilo (18:13). Los 2 mensajes siguientes son el loop del hallazgo 8, antes de corregirlo |
 | `h1-credencial-sheets-vencida.png` | Hallazgo 1: «needs to be reconnected» |
 | `h2-reindexacion-sin-duplicados.png` | Hallazgo 2: 55 registros después de reindexar (IDs 56 a 110) |
 | `h3-wf4-pairedItem-bug.png` | Hallazgo 3: primera corrida de WF4 con resultados mal agrupados |

@@ -8,13 +8,13 @@
         "width": 2940,
         "color": 5
       },
-      "id": "dba790af-95a5-4e2c-94d0-a97332494199",
+      "id": "57042356-d7d8-486d-9a79-ca2966a3b3ca",
       "name": "Nota general",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        -320
+        -240,
+        464
       ]
     },
     {
@@ -24,13 +24,13 @@
         "width": 560,
         "color": 7
       },
-      "id": "90d39e10-ceac-4e4f-8557-5992eb988289",
+      "id": "93c0edc5-c6e3-4b6c-b753-af482d7a976e",
       "name": "Nota 1 · Disparadores",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        -80
+        -240,
+        704
       ]
     },
     {
@@ -40,13 +40,13 @@
         "width": 820,
         "color": 7
       },
-      "id": "a2ddf112-9dae-4a9c-b069-bc3d95c5c6ec",
+      "id": "06510d61-fdd7-4902-a72c-c47490e25da9",
       "name": "Nota 2 · Validación",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        580,
-        -80
+        352,
+        704
       ]
     },
     {
@@ -56,13 +56,13 @@
         "width": 1520,
         "color": 6
       },
-      "id": "e26da5bf-2a09-4cc3-bbd3-a8e2cdcbbaae",
+      "id": "3585ba13-b787-47ba-bf0a-a0cf9b6d9cea",
       "name": "Nota 3 · Indexación",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1420,
-        -80
+        1184,
+        704
       ]
     },
     {
@@ -83,14 +83,20 @@
         "event": "fileCreated",
         "options": {}
       },
-      "id": "add6ac4f-d038-4c10-b66f-d583b5996eee",
+      "id": "49e6a46c-c06f-4e73-b665-90b7450f773c",
       "name": "Archivo nuevo",
       "type": "n8n-nodes-base.googleDriveTrigger",
       "typeVersion": 1,
       "position": [
-        64,
-        80
-      ]
+        -176,
+        864
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CrRXFUn5YH6bXF8D",
+          "name": "Google Drive account"
+        }
+      }
     },
     {
       "parameters": {
@@ -110,24 +116,30 @@
         "event": "fileUpdated",
         "options": {}
       },
-      "id": "2a310d0f-814d-4e58-ae49-85d8eff06ace",
+      "id": "ccf65e9d-5739-4678-8970-e78f11abe0a6",
       "name": "Archivo modificado",
       "type": "n8n-nodes-base.googleDriveTrigger",
       "typeVersion": 1,
       "position": [
-        64,
-        280
-      ]
+        -176,
+        1072
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CrRXFUn5YH6bXF8D",
+          "name": "Google Drive account"
+        }
+      }
     },
     {
       "parameters": {},
-      "id": "ed5324a6-aba2-4293-9b8a-83ddd019e558",
+      "id": "58e9f85d-25af-4f66-9bcd-6f95cc14b8e5",
       "name": "Reindexar carpeta completa",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        64,
-        520
+        -176,
+        1312
       ]
     },
     {
@@ -147,33 +159,39 @@
           ]
         }
       },
-      "id": "d920f6b8-edf9-414c-9c1b-3dcfc468fe2c",
+      "id": "450757b6-a466-4e12-ab98-107ac24d16cf",
       "name": "Listar archivos de la carpeta",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        272,
-        520
-      ]
+        32,
+        1312
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CrRXFUn5YH6bXF8D",
+          "name": "Google Drive account"
+        }
+      }
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "f6d840aa-5e29-4903-88a2-38dadce83bbc",
+              "id": "93b7d335-d45b-4bb5-9480-1e2d661ab108",
               "name": "file_id",
               "value": "={{ $json.id }}",
               "type": "string"
             },
             {
-              "id": "b049eb7d-2b64-41d1-a344-b17cef485470",
+              "id": "08cc0e6f-80ef-429a-9881-95aec9b42dc6",
               "name": "archivo",
               "value": "={{ $json.name }}",
               "type": "string"
             },
             {
-              "id": "0d447c16-88d8-46d9-9978-d86d2dc2f032",
+              "id": "dfdf75c4-0c60-461b-a1cd-2cc138340060",
               "name": "mime_type",
               "value": "={{ $json.mimeType }}",
               "type": "string"
@@ -182,26 +200,26 @@
         },
         "options": {}
       },
-      "id": "87db9dab-eeec-4964-8d50-5bd474190d06",
+      "id": "d890c717-042e-4443-bb1e-731ecace1dd3",
       "name": "Preparar archivo",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        400,
-        280
+        160,
+        1072
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "b42804bc-f418-479b-a486-ef7d601b2749",
+      "id": "4c3c97d3-2ae0-47b3-908d-b05dc04acb05",
       "name": "Loop archivos",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        640,
-        280
+        400,
+        1072
       ]
     },
     {
@@ -215,7 +233,7 @@
           },
           "conditions": [
             {
-              "id": "42dc4f2b-f26c-4a9a-84c2-70d6d2018181",
+              "id": "3aea8bdc-3f3e-49fa-ab18-356cf291e8d7",
               "leftValue": "={{ ['application/pdf', 'application/vnd.google-apps.document'].includes($json.mime_type) }}",
               "rightValue": "",
               "operator": {
@@ -230,13 +248,13 @@
         "looseTypeValidation": true,
         "options": {}
       },
-      "id": "fdde2781-bda7-427a-bebc-fefb3c541fb4",
+      "id": "4581ab80-ccf9-46be-b7be-f47291b6e534",
       "name": "¿Tipo soportado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        860,
-        300
+        624,
+        1088
       ]
     },
     {
@@ -247,16 +265,22 @@
           "queryReplacement": "={{ $('Loop archivos').item.json.file_id }}"
         }
       },
-      "id": "1e1dd10d-7330-48ad-94a6-4962fb85bd71",
+      "id": "b1399306-3158-4684-89e8-b39d024bc604",
       "name": "Borrar fragmentos anteriores",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1100,
-        200
+        864,
+        992
       ],
       "alwaysOutputData": true,
-      "retryOnFail": true
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "jBbst5lFlwuwPTTh",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
@@ -274,30 +298,35 @@
           }
         }
       },
-      "id": "fe548cd0-88ee-45d6-aa0d-4f56dbaf547a",
+      "id": "e3667336-44af-4aee-a94f-e61f6678a51d",
       "name": "Descargar archivo",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1320,
-        200
+        1088,
+        992
       ],
       "retryOnFail": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "CrRXFUn5YH6bXF8D",
+          "name": "Google Drive account"
+        }
+      },
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "operation": "pdf",
-        "binaryPropertyName": "data",
         "options": {}
       },
-      "id": "d48b56d8-d8c4-4233-8a54-cee2dc71bbed",
+      "id": "a52ab6cc-1c00-4bed-9d37-f75360087c8e",
       "name": "Extraer texto",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        1500,
-        200
+        1264,
+        992
       ],
       "onError": "continueErrorOutput"
     },
@@ -305,13 +334,13 @@
       "parameters": {
         "jsCode": "// Fragmenta el texto y antepone a cada fragmento el título del documento.\n// Motivo: en las fichas técnicas muchos fragmentos son filas de tabla que no nombran el modelo;\n// sin el encabezado, «potencia del Sportage» no encontraba la ficha del Sportage (evaluación v1).\n// 'search_document:' es el prefijo que recomienda nomic-embed-text para los documentos.\nconst f = $('Loop archivos').first().json;\nconst texto = String($input.first().json.text || '')\n  .replace(/\\r/g, '').replace(/[ \\t]+/g, ' ').replace(/\\n{3,}/g, '\\n\\n').trim();\nconst titulo = f.archivo.replace(/\\.pdf$/i, '').replace(/^Ficha_Tecnica_/i, 'Ficha técnica Kia ').replace(/_/g, ' ');\nif (texto.length < 50) return [{ json: { ...f, sin_texto: true } }];\n\nconst TAM = 900, SOLAPE = 150;\nconst partes = [];\nlet i = 0;\nwhile (i < texto.length) {\n  let fin = Math.min(i + TAM, texto.length);\n  if (fin < texto.length) {\n    const corte = texto.lastIndexOf('\\n', fin);\n    if (corte > i + TAM * 0.5) fin = corte; // corta en un salto de línea si puede\n  }\n  partes.push(texto.slice(i, fin).trim());\n  if (fin >= texto.length) break;\n  i = fin - SOLAPE;\n}\nreturn partes.filter(Boolean).map((p, n) => ({ json: {\n  ...f, sin_texto: false, titulo, fragmento: n + 1,\n  texto: `search_document: [${titulo}] ${p}`,\n} }));"
       },
-      "id": "5d3c1bbf-95c3-4a3b-8161-8a57730eee7f",
+      "id": "76de65c5-8001-4870-9c2d-17699a7e7ffc",
       "name": "Fragmentar con encabezado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1700,
-        200
+        1472,
+        992
       ]
     },
     {
@@ -325,7 +354,7 @@
           },
           "conditions": [
             {
-              "id": "01fe831c-c8c8-4ab0-8ee3-ecfa1d0221d7",
+              "id": "b4c1566c-7821-46c2-8303-c28b5c7d21db",
               "leftValue": "={{ $json.sin_texto }}",
               "rightValue": "",
               "operator": {
@@ -340,13 +369,13 @@
         "looseTypeValidation": true,
         "options": {}
       },
-      "id": "d9789d1b-0a9c-4704-8205-de409fa08406",
+      "id": "11e5dd9a-6833-4631-aebe-47074923a42f",
       "name": "¿Tiene texto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1900,
-        200
+        1664,
+        992
       ]
     },
     {
@@ -445,22 +474,22 @@
         },
         "options": {}
       },
-      "id": "b304bddb-8a83-49b7-b3f6-bb141f03a8e8",
+      "id": "5869717d-bf22-466e-a73c-579a001feefd",
       "name": "Registrar SIN TEXTO",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2140,
-        640
+        1904,
+        1424
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "TDkC5YeagcXfiiuW",
           "name": "Google Sheets account"
         }
       },
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
       "onError": "continueRegularOutput"
     },
     {
@@ -476,35 +505,46 @@
           "queryName": "match_documents"
         }
       },
-      "id": "017e5716-282c-4d3e-8225-2e1e7f024d85",
+      "id": "c485eea2-8666-4b8a-92f2-b1a40088be13",
       "name": "Guardar en Supabase",
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        2140,
-        200
+        1904,
+        992
       ],
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "u9X88TXvtn1K5GyZ",
+          "name": "Supabase account"
+        }
+      },
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "model": "nomic-embed-text:latest"
       },
-      "id": "b536c690-e01b-459f-a38d-137c0d4629c8",
+      "id": "613e63c4-e42d-414d-bbc0-fdf1b012fe22",
       "name": "Embeddings Ollama (indexar)",
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        2060,
-        440
-      ]
+        1824,
+        1232
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "eBSzyM1C6VqCuOUY",
+          "name": "Ollama account"
+        }
+      }
     },
     {
       "parameters": {
-        "dataType": "json",
         "jsonMode": "expressionData",
         "jsonData": "={{ $json.texto }}",
         "textSplittingMode": "custom",
@@ -531,28 +571,27 @@
           }
         }
       },
-      "id": "81f94b11-a64b-4963-a8d2-8af447e41e28",
+      "id": "5b7882e9-c288-4916-a330-78fecec8d71d",
       "name": "Cargar documento",
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        2220,
-        440
+        1984,
+        1232
       ]
     },
     {
       "parameters": {
         "chunkSize": 3000,
-        "chunkOverlap": 0,
         "options": {}
       },
-      "id": "8e11e750-bd70-494b-b52a-5cf71d38e18b",
+      "id": "84185aa4-0eb3-41dc-bde6-6fc43ac4a482",
       "name": "Partir en fragmentos",
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        2340,
-        600
+        2112,
+        1392
       ]
     },
     {
@@ -563,16 +602,22 @@
           "queryReplacement": "={{ $('Loop archivos').item.json.file_id }}"
         }
       },
-      "id": "2a352580-bed6-49f9-b150-418fb1fc4a35",
+      "id": "90286d9b-eca8-4b9d-9bf5-c1f78c8c547d",
       "name": "Contar fragmentos",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2400,
-        200
+        2160,
+        992
       ],
       "executeOnce": true,
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "jBbst5lFlwuwPTTh",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
@@ -670,24 +715,24 @@
         },
         "options": {}
       },
-      "id": "03cca305-db43-4ac7-97e5-32d7a7d9d9f2",
+      "id": "3780b03d-30ba-4652-9b79-11b373b6a947",
       "name": "Registrar OK",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2640,
-        200
+        2400,
+        992
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "executeOnce": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "TDkC5YeagcXfiiuW",
           "name": "Google Sheets account"
         }
       },
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
-      "onError": "continueRegularOutput",
-      "executeOnce": true
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -785,22 +830,22 @@
         },
         "options": {}
       },
-      "id": "d84b778e-be5f-42f1-8b08-f3fb37cded99",
+      "id": "174b60c0-02b1-4be2-bc8f-d281d37524a9",
       "name": "Registrar OMITIDO",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1100,
-        600
+        864,
+        1392
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "TDkC5YeagcXfiiuW",
           "name": "Google Sheets account"
         }
       },
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
       "onError": "continueRegularOutput"
     },
     {
@@ -899,24 +944,24 @@
         },
         "options": {}
       },
-      "id": "cc68c553-c8aa-4361-9438-4484d9751d9f",
+      "id": "41f66d73-9378-48c4-a6ad-4c1f13a1f7cd",
       "name": "Registrar ERROR",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2400,
-        640
+        2320,
+        1424
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "executeOnce": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "TDkC5YeagcXfiiuW",
           "name": "Google Sheets account"
         }
       },
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
-      "onError": "continueRegularOutput",
-      "executeOnce": true
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -1189,11 +1234,22 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "timezone": "America/Argentina/Buenos_Aires",
-    "saveManualExecutions": true
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "QNnygpmUM4Tb5nTI",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timezone": "America/Argentina/Buenos_Aires"
   },
+  "versionId": "f2855827-49f0-45d9-b8e8-9fb2aea43181",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9e10cf239cbdd9f359aff4b93c29da742ff46abc8d7e12dea07f17e4faf212b9"
+  },
+  "nodeGroups": [],
+  "id": "h2ryG6FjfxnO0iUl",
   "tags": []
 }

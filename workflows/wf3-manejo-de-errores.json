@@ -8,24 +8,24 @@
         "width": 920,
         "color": 5
       },
-      "id": "a0c53336-d3e8-4d84-9716-d694639561cd",
+      "id": "b960f4af-47d2-4602-b141-787e77ea0c19",
       "name": "Nota general",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         0,
-        -260
+        0
       ]
     },
     {
       "parameters": {},
-      "id": "6beaee8e-21d9-48b3-9b9f-1e47f7a2691f",
+      "id": "94d8ef65-80a7-4b87-bff2-231b042dc94c",
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "position": [
         64,
-        80
+        352
       ]
     },
     {
@@ -114,22 +114,22 @@
         },
         "options": {}
       },
-      "id": "23246664-8cb6-4910-9705-f6e8778b11f2",
+      "id": "8ab39385-109d-433c-8bb8-e09968609de6",
       "name": "Registrar en Errores",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
         320,
-        80
+        352
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "TDkC5YeagcXfiiuW",
           "name": "Google Sheets account"
         }
       },
-      "retryOnFail": true,
-      "waitBetweenTries": 3000,
       "onError": "continueRegularOutput"
     },
     {
@@ -142,22 +142,22 @@
           "appendAttribution": false
         }
       },
-      "id": "53c66f70-bd76-4836-a36e-7ba7fa039791",
+      "id": "044c22cd-b24d-4906-98bf-2216fa48bf57",
       "name": "Avisar al administrador",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
         560,
-        80
+        352
       ],
+      "webhookId": "8ccde840-d913-4a93-bbf6-73f55ddbacca",
+      "retryOnFail": true,
       "credentials": {
         "gmailOAuth2": {
           "id": "FCStIyzpZ7NncCOm",
           "name": "Gmail account"
         }
-      },
-      "webhookId": "79b19bf6-c441-4dac-aa81-b640b2fa105b",
-      "retryOnFail": true
+      }
     }
   ],
   "pinData": {},
@@ -185,11 +185,20 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
     "timezone": "America/Argentina/Buenos_Aires",
-    "saveManualExecutions": true
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
+  "versionId": "e8f6bb41-baab-474e-9895-e3a0c54a0192",
+  "meta": {
+    "instanceId": "9e10cf239cbdd9f359aff4b93c29da742ff46abc8d7e12dea07f17e4faf212b9"
+  },
+  "nodeGroups": [],
+  "id": "QNnygpmUM4Tb5nTI",
   "tags": []
 }

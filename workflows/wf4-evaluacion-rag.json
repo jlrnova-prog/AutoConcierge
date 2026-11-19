@@ -8,37 +8,37 @@
         "width": 1400,
         "color": 5
       },
-      "id": "60aec6a2-c97c-4052-a97c-d93f0380bb58",
+      "id": "c2511621-c101-429f-9488-e6b20901e819",
       "name": "Nota general",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         0,
-        -280
+        0
       ]
     },
     {
       "parameters": {},
-      "id": "35b97183-edca-421c-9591-de52312dbfd2",
+      "id": "ca799a6b-7f1e-4a2a-86fd-d1659ac20724",
       "name": "Ejecutar evaluación",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
         64,
-        80
+        368
       ]
     },
     {
       "parameters": {
         "jsCode": "// Set de evaluación: pregunta + documento que debería responderla.\n// '(ninguna)' = la base no cubre el tema: lo correcto es que NO supere el umbral.\nreturn [\n  ['¿Qué documentos necesito para patentar el auto a mi nombre?', '03 · Documentación para patentar una unidad 0 km'],\n  ['¿Cada cuántos kilómetros hay que hacer el service?', '01 · Garantía y service oficial'],\n  ['¿Cuánto tiempo me guardan la unidad si dejo la seña?', '02 · Reserva de unidades y seña'],\n  ['¿Qué tengo que llevar el día que retiro el auto?', '04 · Entrega de unidades 0 km'],\n  ['¿Puedo pagar el auto con tarjeta de crédito?', '05 · Financiación y medios de pago (preguntas frecuentes)'],\n  ['¿Abren los sábados?', '06 · Atención, horarios y contacto'],\n  ['¿Qué potencia tiene el Sportage diésel?', 'Ficha_Tecnica_Sportage.pdf'],\n  ['¿Cuántas plazas tiene la Carnival?', 'Ficha_Tecnica_Carnival.pdf'],\n  ['¿Qué capacidad de baúl tiene el K3 Cross?', 'Ficha_Tecnica_K3_cross.pdf'],\n  ['¿Cuánta carga soporta la K2500?', 'Ficha_Tecnica_K2500.pdf'],\n  ['¿Qué motor tiene el K4 hatchback turbo?', 'Ficha_Tecnica_K4_Hatchback_turbo.pdf'],\n  ['¿Hacen envíos del auto a Córdoba en camión?', '(ninguna)'],\n  ['¿Cuánto consume el Sorento en ruta?', '(ninguna)'],\n].map(([pregunta, fuente_esperada], i) => ({ json: { n: i + 1, pregunta, fuente_esperada } }));"
       },
-      "id": "b92d934b-f012-4e9c-b1a9-acd4528300c9",
+      "id": "d984ba12-f9d6-45ae-968c-039c0a6156e5",
       "name": "Preguntas de evaluación",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         288,
-        80
+        368
       ]
     },
     {
@@ -52,45 +52,56 @@
         },
         "prompt": "={{ 'search_query: ' + $json.pregunta }}",
         "topK": 3,
-        "includeDocumentMetadata": true,
         "options": {
           "queryName": "match_documents"
         }
       },
-      "id": "75c9bc52-8f4b-43c4-a4a8-50a3f76f3fa7",
+      "id": "10da7ed4-9634-419f-8699-01a19c8c5c23",
       "name": "Buscar (top 3)",
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
         512,
-        80
+        368
       ],
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "u9X88TXvtn1K5GyZ",
+          "name": "Supabase account"
+        }
+      }
     },
     {
       "parameters": {
         "model": "nomic-embed-text:latest"
       },
-      "id": "e18b26c2-9e24-4f69-8d88-551b4e3debdd",
+      "id": "fd1692ec-e024-4a65-812c-54c372c62b77",
       "name": "Embeddings Ollama (evaluación)",
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        520,
-        300
-      ]
+        528,
+        592
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "eBSzyM1C6VqCuOUY",
+          "name": "Ollama account"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "// Agrupa los resultados por pregunta y calcula los aciertos.\n// El Vector Store devuelve los resultados EN ORDEN: 3 por pregunta (topK = 3).\n// No se usa pairedItem: en este nodo apunta al índice del resultado, no al de la pregunta\n// (hallazgo de la primera corrida: asignaba un solo resultado a cada pregunta).\nconst UMBRAL = 0.65;\nconst TOPK = 3;\nconst preguntas = $('Preguntas de evaluación').all().map(i => i.json);\nconst resultados = $input.all().filter(i => i.json.document);\nif (resultados.length !== preguntas.length * TOPK) {\n  throw new Error(`Se esperaban ${preguntas.length * TOPK} resultados y llegaron ${resultados.length}: revisar el topK o la tabla documents.`);\n}\nconst porPregunta = {};\nresultados.forEach((it, i) => {\n  const idx = Math.floor(i / TOPK);\n  (porPregunta[idx] = porPregunta[idx] || []).push({\n    fuente: it.json.document.metadata?.archivo || 'sin nombre',\n    score: Number(it.json.score || 0),\n  });\n});\nconst fecha = $now.toFormat('dd/MM/yyyy HH:mm');\nconst filas = preguntas.map((p, idx) => {\n  const r = (porPregunta[idx] || []).sort((a, b) => b.score - a.score);\n  const top1 = r[0] || { fuente: '-', score: 0 };\n  const negativa = p.fuente_esperada === '(ninguna)';\n  const supera = top1.score >= UMBRAL;\n  const a1 = !negativa && top1.fuente === p.fuente_esperada;\n  const a3 = !negativa && r.some(x => x.fuente === p.fuente_esperada);\n  const ok = negativa ? !supera : (a3 && supera);\n  return { fecha, n: p.n, pregunta: p.pregunta, fuente_esperada: p.fuente_esperada,\n    top1_fuente: top1.fuente, top1_similitud: Number(top1.score.toFixed(3)),\n    top3_fuentes: r.map(x => `${x.fuente} (${x.score.toFixed(2)})`).join(' | '),\n    acierto_top1: negativa ? '-' : (a1 ? 'sí' : 'no'), acierto_top3: negativa ? '-' : (a3 ? 'sí' : 'no'),\n    supera_umbral: supera ? 'sí' : 'no', resultado: ok ? 'OK' : 'FALLA' };\n});\nconst pos = filas.filter(f => f.fuente_esperada !== '(ninguna)');\nconst neg = filas.filter(f => f.fuente_esperada === '(ninguna)');\nconst pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '-';\nconst prom = arr => arr.length ? (arr.reduce((s, f) => s + f.top1_similitud, 0) / arr.length).toFixed(3) : '-';\nfilas.push({ fecha, n: 'RESUMEN', pregunta: `${filas.filter(f => f.resultado === 'OK').length}/${filas.length} casos OK`,\n  fuente_esperada: `umbral ${UMBRAL}`,\n  top1_fuente: `top-1: ${pct(pos.filter(f => f.acierto_top1 === 'sí').length, pos.length)} · top-3: ${pct(pos.filter(f => f.acierto_top3 === 'sí').length, pos.length)}`,\n  top1_similitud: Number(prom(pos)) || 0,\n  top3_fuentes: `similitud promedio cubiertas ${prom(pos)} · no cubiertas ${prom(neg)} (máx ${neg.length ? Math.max(...neg.map(f => f.top1_similitud)).toFixed(3) : '-'})`,\n  acierto_top1: '', acierto_top3: '', supera_umbral: '', resultado: '' });\nreturn filas.map(f => ({ json: f }));"
       },
-      "id": "9d605855-51af-4d8c-a46b-4599c27882a0",
+      "id": "438fc98f-702f-4318-a09b-44f026f293b4",
       "name": "Evaluar resultados",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        760,
-        80
+        768,
+        368
       ]
     },
     {
@@ -229,22 +240,22 @@
         },
         "options": {}
       },
-      "id": "a4a3ca68-250d-4349-9641-6a7067915b0e",
+      "id": "ab787fb2-a9a2-4586-83a7-ffaf10c6ff57",
       "name": "Registrar evaluación",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1000,
-        80
+        1008,
+        368
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "TDkC5YeagcXfiiuW",
           "name": "Google Sheets account"
         }
-      },
-      "retryOnFail": true,
-      "waitBetweenTries": 3000
+      }
     }
   ],
   "pinData": {},
@@ -308,8 +319,18 @@
   "active": false,
   "settings": {
     "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
     "timezone": "America/Argentina/Buenos_Aires",
-    "saveManualExecutions": true
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
+  "versionId": "8fea6b7f-3f87-4f36-8d98-530a865c799f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9e10cf239cbdd9f359aff4b93c29da742ff46abc8d7e12dea07f17e4faf212b9"
+  },
+  "nodeGroups": [],
+  "id": "WRdqSlCBZo8ltNbj",
   "tags": []
 }
