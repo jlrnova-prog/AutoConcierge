@@ -1,0 +1,12 @@
+== 1 · RAG documentación (patentar)
+{"consulta_id":"WEB-261119-73","estado":"RESPONDIDA","prioridad":"INFO","mensaje":"Hola Marta, para patentarle el auto a su nombre necesitá su DNI vigente, constancia de CUIL o CUIT y, si el domicilio no coincide, una constancia de domicilio. Como está casada, también debe presentar el nombre completo y DNI de su cónyuge. La gestoría de la concesionaria realiza el trámite una vez que la unidad está pagada. Puede enviar la documentación escaneada por mail o entregarla en el salón de ventas. El proceso suele demorar entre 7 y 10 días hábiles."}
+(HTTP 200 · 10.648001s)
+
+== 3 · Ficha técnica (PDF Kia)
+{"consulta_id":"WEB-261119-74","estado":"RESPONDIDA","prioridad":"INFO","mensaje":"Hola Lucas, el Sportage tiene motor de 4 cilindros en línea DOHC con cilindrada de aproximadamente 2.0 L. La potencia es de 183 cv a 4000 rpm en una versión y de 192 cv a 4500 rpm en otra, según la versión. Para más detalle podés consultar con un asesor."}
+(HTTP 200 · 8.828500s)
+
+== 5 · Sin contexto → deriva
+{"consulta_id":"WEB-261119-75","estado":"DERIVADA","prioridad":"REVISAR","mensaje":"Hola Diego, el envío a otra provincia lo tiene que confirmar un asesor. Un asesor te va a contactar dentro de las 4 horas hábiles."}
+(HTTP 200 · 9.166210s)
+

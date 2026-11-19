@@ -1,0 +1,195 @@
+{
+  "name": "Final · Auto Concierge · WF3 Manejo de errores",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Final · WF3 · Manejo global de errores\nSe asigna como **Error Workflow** en la configuración de WF1 y WF2 (Settings → Error workflow).\nCaptura lo que las ramas de error internas no cubren: timeout de la ejecución (600 s), credencial vencida, nodo caído sin salida de error.\nRegistra el error en la hoja «Errores» y avisa por mail con el enlace a la ejecución.",
+        "height": 220,
+        "width": 920,
+        "color": 5
+      },
+      "id": "a0c53336-d3e8-4d84-9716-d694639561cd",
+      "name": "Nota general",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6beaee8e-21d9-48b3-9b9f-1e47f7a2691f",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo",
+          "mode": "id",
+          "cachedResultName": "PE3 · Auto Concierge · Base (datos ficticios)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Errores",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
+            "workflow": "={{ $json.workflow?.name ?? '-' }}",
+            "nodo": "={{ $json.execution?.lastNodeExecuted ?? $json.trigger?.error?.node?.name ?? '-' }}",
+            "mensaje": "={{ String($json.execution?.error?.message ?? $json.trigger?.error?.message ?? 'sin detalle').slice(0, 300) }}",
+            "execution_id": "={{ $json.execution?.id ?? '-' }}",
+            "url": "={{ $json.execution?.url ?? '-' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow",
+              "displayName": "workflow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nodo",
+              "displayName": "nodo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "23246664-8cb6-4910-9705-f6e8778b11f2",
+      "name": "Registrar en Errores",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TDkC5YeagcXfiiuW",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "joanlraymundo@gmail.com",
+        "subject": "=[ERROR n8n] {{ $('Error Trigger').item.json.workflow?.name ?? 'Workflow' }} · nodo {{ $('Error Trigger').item.json.execution?.lastNodeExecuted ?? '-' }}",
+        "emailType": "text",
+        "message": "=Falló una ejecución de Auto Concierge.\n\nWorkflow: {{ $('Error Trigger').item.json.workflow?.name }}\nNodo: {{ $('Error Trigger').item.json.execution?.lastNodeExecuted ?? '-' }}\nError: {{ $('Error Trigger').item.json.execution?.error?.message ?? $('Error Trigger').item.json.trigger?.error?.message ?? 'sin detalle' }}\nEjecución: {{ $('Error Trigger').item.json.execution?.url ?? '-' }}\n\nRevisar la ejecución y, si era una consulta de un cliente, responderle a mano.\nn8n · Auto Concierge",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "53c66f70-bd76-4836-a36e-7ba7fa039791",
+      "name": "Avisar al administrador",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        80
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "FCStIyzpZ7NncCOm",
+          "name": "Gmail account"
+        }
+      },
+      "webhookId": "79b19bf6-c441-4dac-aa81-b640b2fa105b",
+      "retryOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Registrar en Errores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar en Errores": {
+      "main": [
+        [
+          {
+            "node": "Avisar al administrador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "saveManualExecutions": true
+  },
+  "tags": []
+}

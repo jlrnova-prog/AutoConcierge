@@ -1,0 +1,1199 @@
+{
+  "name": "Final · Auto Concierge · WF1 Indexación (Drive → Supabase)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Final · WF1 · Indexación de la base de conocimiento\nToma los documentos de la carpeta de Drive **«Auto Concierge · Base de conocimiento»** (fichas técnicas Kia en PDF + documentos de la empresa en Google Docs), los parte en fragmentos, genera los embeddings **en local con Ollama (nomic-embed-text, 768 dim.)** y los guarda en **Supabase (pgvector)**.\nActualizar la base = subir o editar un archivo en la carpeta. Cada archivo queda registrado en la hoja «Indexacion».",
+        "height": 220,
+        "width": 2940,
+        "color": 5
+      },
+      "id": "dba790af-95a5-4e2c-94d0-a97332494199",
+      "name": "Nota general",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 1 · Disparadores\n**Archivo nuevo** y **Archivo modificado** (Drive Trigger, cada 1 min) para el día a día.\n**Reindexar carpeta completa** (manual) para la carga inicial: lista todos los archivos de la carpeta.",
+        "height": 820,
+        "width": 560,
+        "color": 7
+      },
+      "id": "90d39e10-ceac-4e4f-8557-5992eb988289",
+      "name": "Nota 1 · Disparadores",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 2 · Validación y limpieza\n*Loop* procesa de a un archivo (no satura Ollama).\n*¿Tipo soportado?*: solo PDF y Google Docs. El resto se registra como OMITIDO.\n*Borrar fragmentos anteriores* (Postgres) elimina la versión vieja del archivo → no hay duplicados al actualizar.",
+        "height": 820,
+        "width": 820,
+        "color": 7
+      },
+      "id": "a2ddf112-9dae-4a9c-b069-bc3d95c5c6ec",
+      "name": "Nota 2 · Validación",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        580,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### 3 · Fragmentos con encabezado, embeddings y Vector Store\n*Descargar archivo* (Google Docs → PDF) → *Extraer texto* del PDF.\n*Fragmentar con encabezado*: fragmentos de ~900 caracteres (solape 150) y a cada uno se le antepone el título del documento (ej. «Ficha técnica Kia Sportage») + el prefijo `search_document:` que pide nomic-embed-text. Así un fragmento de tabla sin el nombre del modelo igual se recupera cuando preguntan por ese modelo (v1 sin encabezado: top-3 = 55 %).\n*Guardar en Supabase*: Data Loader (metadata archivo + file_id + fragmento) → Embeddings Ollama → tabla `documents`.\nRetry 2× · si falla (Ollama apagado, Supabase caído) → salida de error → fila ERROR en «Indexacion».",
+        "height": 820,
+        "width": 1520,
+        "color": 6
+      },
+      "id": "e26da5bf-2a09-4cc3-bbd3-a8e2cdcbbaae",
+      "name": "Nota 3 · Indexación",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1420,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1Dv_VRGsBsYsBf0ZkmWwTeB1zozuE_oSl",
+          "mode": "id"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "id": "add6ac4f-d038-4c10-b66f-d583b5996eee",
+      "name": "Archivo nuevo",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1Dv_VRGsBsYsBf0ZkmWwTeB1zozuE_oSl",
+          "mode": "id"
+        },
+        "event": "fileUpdated",
+        "options": {}
+      },
+      "id": "2a310d0f-814d-4e58-ae49-85d8eff06ace",
+      "name": "Archivo modificado",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        280
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ed5324a6-aba2-4293-9b8a-83ddd019e558",
+      "name": "Reindexar carpeta completa",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "'1Dv_VRGsBsYsBf0ZkmWwTeB1zozuE_oSl' in parents and trashed = false",
+        "returnAll": true,
+        "filter": {
+          "whatToSearch": "files"
+        },
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType"
+          ]
+        }
+      },
+      "id": "d920f6b8-edf9-414c-9c1b-3dcfc468fe2c",
+      "name": "Listar archivos de la carpeta",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        272,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f6d840aa-5e29-4903-88a2-38dadce83bbc",
+              "name": "file_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b049eb7d-2b64-41d1-a344-b17cef485470",
+              "name": "archivo",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "0d447c16-88d8-46d9-9978-d86d2dc2f032",
+              "name": "mime_type",
+              "value": "={{ $json.mimeType }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "87db9dab-eeec-4964-8d50-5bd474190d06",
+      "name": "Preparar archivo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b42804bc-f418-479b-a486-ef7d601b2749",
+      "name": "Loop archivos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        640,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "42dc4f2b-f26c-4a9a-84c2-70d6d2018181",
+              "leftValue": "={{ ['application/pdf', 'application/vnd.google-apps.document'].includes($json.mime_type) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "fdde2781-bda7-427a-bebc-fefb3c541fb4",
+      "name": "¿Tipo soportado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM documents WHERE metadata->>'file_id' = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Loop archivos').item.json.file_id }}"
+        }
+      },
+      "id": "1e1dd10d-7330-48ad-94a6-4962fb85bd71",
+      "name": "Borrar fragmentos anteriores",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1100,
+        200
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Loop archivos').item.json.file_id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "id": "fe548cd0-88ee-45d6-aa0d-4f56dbaf547a",
+      "name": "Descargar archivo",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1320,
+        200
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "data",
+        "options": {}
+      },
+      "id": "d48b56d8-d8c4-4233-8a54-cee2dc71bbed",
+      "name": "Extraer texto",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        200
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fragmenta el texto y antepone a cada fragmento el título del documento.\n// Motivo: en las fichas técnicas muchos fragmentos son filas de tabla que no nombran el modelo;\n// sin el encabezado, «potencia del Sportage» no encontraba la ficha del Sportage (evaluación v1).\n// 'search_document:' es el prefijo que recomienda nomic-embed-text para los documentos.\nconst f = $('Loop archivos').first().json;\nconst texto = String($input.first().json.text || '')\n  .replace(/\\r/g, '').replace(/[ \\t]+/g, ' ').replace(/\\n{3,}/g, '\\n\\n').trim();\nconst titulo = f.archivo.replace(/\\.pdf$/i, '').replace(/^Ficha_Tecnica_/i, 'Ficha técnica Kia ').replace(/_/g, ' ');\nif (texto.length < 50) return [{ json: { ...f, sin_texto: true } }];\n\nconst TAM = 900, SOLAPE = 150;\nconst partes = [];\nlet i = 0;\nwhile (i < texto.length) {\n  let fin = Math.min(i + TAM, texto.length);\n  if (fin < texto.length) {\n    const corte = texto.lastIndexOf('\\n', fin);\n    if (corte > i + TAM * 0.5) fin = corte; // corta en un salto de línea si puede\n  }\n  partes.push(texto.slice(i, fin).trim());\n  if (fin >= texto.length) break;\n  i = fin - SOLAPE;\n}\nreturn partes.filter(Boolean).map((p, n) => ({ json: {\n  ...f, sin_texto: false, titulo, fragmento: n + 1,\n  texto: `search_document: [${titulo}] ${p}`,\n} }));"
+      },
+      "id": "5d3c1bbf-95c3-4a3b-8161-8a57730eee7f",
+      "name": "Fragmentar con encabezado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "01fe831c-c8c8-4ab0-8ee3-ecfa1d0221d7",
+              "leftValue": "={{ $json.sin_texto }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "d9789d1b-0a9c-4704-8205-de409fa08406",
+      "name": "¿Tiene texto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo",
+          "mode": "id",
+          "cachedResultName": "PE3 · Auto Concierge · Base (datos ficticios)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Indexacion",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
+            "file_id": "={{ $json.file_id }}",
+            "archivo": "={{ $json.archivo }}",
+            "mime_type": "={{ $json.mime_type }}",
+            "fragmentos": "0",
+            "estado": "REVISAR",
+            "detalle": "El PDF no tiene texto extraíble (¿escaneado?): subir una versión con texto"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "displayName": "file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "archivo",
+              "displayName": "archivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime_type",
+              "displayName": "mime_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fragmentos",
+              "displayName": "fragmentos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b304bddb-8a83-49b7-b3f6-bb141f03a8e8",
+      "name": "Registrar SIN TEXTO",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2140,
+        640
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TDkC5YeagcXfiiuW",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "id": "017e5716-282c-4d3e-8225-2e1e7f024d85",
+      "name": "Guardar en Supabase",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        2140,
+        200
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "id": "b536c690-e01b-459f-a38d-137c0d4629c8",
+      "name": "Embeddings Ollama (indexar)",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "dataType": "json",
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.texto }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "archivo",
+                "value": "={{ $json.archivo }}"
+              },
+              {
+                "name": "file_id",
+                "value": "={{ $json.file_id }}"
+              },
+              {
+                "name": "fragmento",
+                "value": "={{ $json.fragmento }}"
+              },
+              {
+                "name": "indexado",
+                "value": "={{ $now.toISO() }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "81f94b11-a64b-4963-a8d2-8af447e41e28",
+      "name": "Cargar documento",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        2220,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "chunkSize": 3000,
+        "chunkOverlap": 0,
+        "options": {}
+      },
+      "id": "8e11e750-bd70-494b-b52a-5cf71d38e18b",
+      "name": "Partir en fragmentos",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        2340,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT count(*)::int AS fragmentos FROM documents WHERE metadata->>'file_id' = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Loop archivos').item.json.file_id }}"
+        }
+      },
+      "id": "2a352580-bed6-49f9-b150-418fb1fc4a35",
+      "name": "Contar fragmentos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2400,
+        200
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo",
+          "mode": "id",
+          "cachedResultName": "PE3 · Auto Concierge · Base (datos ficticios)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Indexacion",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
+            "file_id": "={{ $('Loop archivos').item.json.file_id }}",
+            "archivo": "={{ $('Loop archivos').item.json.archivo }}",
+            "mime_type": "={{ $('Loop archivos').item.json.mime_type }}",
+            "fragmentos": "={{ $json.fragmentos ?? 0 }}",
+            "estado": "={{ ($json.fragmentos ?? 0) > 0 ? 'OK' : 'REVISAR' }}",
+            "detalle": "={{ ($json.fragmentos ?? 0) > 0 ? 'Indexado' : 'No se generaron fragmentos (PDF sin texto o escaneado)' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "displayName": "file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "archivo",
+              "displayName": "archivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime_type",
+              "displayName": "mime_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fragmentos",
+              "displayName": "fragmentos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "03cca305-db43-4ac7-97e5-32d7a7d9d9f2",
+      "name": "Registrar OK",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2640,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TDkC5YeagcXfiiuW",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo",
+          "mode": "id",
+          "cachedResultName": "PE3 · Auto Concierge · Base (datos ficticios)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Indexacion",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
+            "file_id": "={{ $json.file_id }}",
+            "archivo": "={{ $json.archivo }}",
+            "mime_type": "={{ $json.mime_type }}",
+            "fragmentos": "0",
+            "estado": "OMITIDO",
+            "detalle": "Tipo de archivo no soportado: subir PDF o Google Doc"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "displayName": "file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "archivo",
+              "displayName": "archivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime_type",
+              "displayName": "mime_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fragmentos",
+              "displayName": "fragmentos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d84b778e-be5f-42f1-8b08-f3fb37cded99",
+      "name": "Registrar OMITIDO",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1100,
+        600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TDkC5YeagcXfiiuW",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo",
+          "mode": "id",
+          "cachedResultName": "PE3 · Auto Concierge · Base (datos ficticios)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Indexacion",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha": "={{ $now.toFormat('dd/MM/yyyy HH:mm') }}",
+            "file_id": "={{ $('Loop archivos').item.json.file_id }}",
+            "archivo": "={{ $('Loop archivos').item.json.archivo }}",
+            "mime_type": "={{ $('Loop archivos').item.json.mime_type }}",
+            "fragmentos": "0",
+            "estado": "ERROR",
+            "detalle": "={{ 'Falló la descarga o la indexación: ' + ($json.error?.message ?? $json.error ?? 'sin detalle') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "file_id",
+              "displayName": "file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "archivo",
+              "displayName": "archivo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime_type",
+              "displayName": "mime_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fragmentos",
+              "displayName": "fragmentos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "cc68c553-c8aa-4361-9438-4484d9751d9f",
+      "name": "Registrar ERROR",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2400,
+        640
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "TDkC5YeagcXfiiuW",
+          "name": "Google Sheets account"
+        }
+      },
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput",
+      "executeOnce": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Archivo nuevo": {
+      "main": [
+        [
+          {
+            "node": "Preparar archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archivo modificado": {
+      "main": [
+        [
+          {
+            "node": "Preparar archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reindexar carpeta completa": {
+      "main": [
+        [
+          {
+            "node": "Listar archivos de la carpeta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar archivos de la carpeta": {
+      "main": [
+        [
+          {
+            "node": "Preparar archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar archivo": {
+      "main": [
+        [
+          {
+            "node": "Loop archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop archivos": {
+      "main": [
+        [],
+        [
+          {
+            "node": "¿Tipo soportado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tipo soportado?": {
+      "main": [
+        [
+          {
+            "node": "Borrar fragmentos anteriores",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar OMITIDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Borrar fragmentos anteriores": {
+      "main": [
+        [
+          {
+            "node": "Descargar archivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar archivo": {
+      "main": [
+        [
+          {
+            "node": "Extraer texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer texto": {
+      "main": [
+        [
+          {
+            "node": "Fragmentar con encabezado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fragmentar con encabezado": {
+      "main": [
+        [
+          {
+            "node": "¿Tiene texto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Tiene texto?": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar SIN TEXTO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar SIN TEXTO": {
+      "main": [
+        [
+          {
+            "node": "Loop archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar en Supabase": {
+      "main": [
+        [
+          {
+            "node": "Contar fragmentos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contar fragmentos": {
+      "main": [
+        [
+          {
+            "node": "Registrar OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar OK": {
+      "main": [
+        [
+          {
+            "node": "Loop archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar ERROR": {
+      "main": [
+        [
+          {
+            "node": "Loop archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar OMITIDO": {
+      "main": [
+        [
+          {
+            "node": "Loop archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama (indexar)": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Guardar en Supabase",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar documento": {
+      "ai_document": [
+        [
+          {
+            "node": "Guardar en Supabase",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Partir en fragmentos": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Cargar documento",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Argentina/Buenos_Aires",
+    "saveManualExecutions": true
+  },
+  "tags": []
+}

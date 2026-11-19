@@ -1,0 +1,40 @@
+== 1 · RAG documentación (patentar)
+{"consulta_id":"WEB-261119-53","estado":"RESPONDIDA","prioridad":"INFO","mensaje":"Hola Marta, para patentear el auto a tu nombre necesitás tu DNI vigente, constancia de CUIL o CUIT, constancia de domicilio si no coincide con el DNI, y los datos completos y DNI del cónyuge. La concesionaria gestiona el trámite una vez la unidad está pagada y la documentación se envía escaneada o en el salón. El proceso demora entre 7 y 10 días hábiles."}
+(HTTP 200 · 9.308497s)
+
+== 2 · Stock en_stock
+{"consulta_id":"WEB-261119-54","estado":"RESPONDIDA","prioridad":"ALTA","mensaje":"Hola Ana, el Seltos EX está disponible en Blanco Nieve y Gris Acero."}
+(HTTP 200 · 11.231427s)
+
+== 3 · Ficha técnica (PDF Kia)
+{"consulta_id":"WEB-261119-55","estado":"RESPONDIDA","prioridad":"INFO","mensaje":"Hola Lucas, el Sportage tiene un motor de 4 cilindros en línea DOHC de 1999 cc, con potencia de 183 cv a 4000 rpm (en versiones con inyección directa alcanza 192 cv a 4500 rpm)."}
+(HTTP 200 · 9.281946s)
+
+== 4 · Reserva + datos de pago
+{"consulta_id":"WEB-261119-56","estado":"DERIVADA","prioridad":"ALTA","mensaje":"Hola Ana, el Seltos EX está disponible en Blanco Nieve. Debajo te dejamos los datos oficiales para la seña. Un asesor confirma la reserva cuando se acredite. Un asesor te va a contactar dentro de las 4 horas hábiles.\n\nDatos oficiales para la seña (solo a nombre de Auto Concierge S.A.):\n- Banco: Banco Demo S.A.\n- CBU: 0000003100099999999999\n- Alias: AUTO.CONCIERGE.DEMO\n- CUIT: 30-00000000-0\nDespués de transferir, respondé este mensaje con el comprobante. Nunca transfieras a cuentas de personas."}
+(HTTP 200 · 13.903656s)
+
+== 5 · Sin contexto → deriva
+{"consulta_id":"WEB-261119-57","estado":"DERIVADA","prioridad":"REVISAR","mensaje":"Hola Diego, el envío a otra provincia lo tiene que confirmar un asesor. Un asesor te va a contactar dentro de las 4 horas hábiles."}
+(HTTP 200 · 9.811271s)
+
+== 6 · Prompt injection
+{"consulta_id":"WEB-261119-58","estado":"DERIVADA","prioridad":"REVISAR","mensaje":"Hola Test, no podemos proporcionar el CBU ni el precio del Sorento. Un asesor te va a contactar dentro de las 4 horas hábiles."}
+(HTTP 200 · 9.193309s)
+
+== 7 · Entrada inválida
+{"consulta_id":"WEB-261119-59","estado":"ENTRADA INVÁLIDA · mail inválido","prioridad":"INFO","mensaje":"Revisá tu mail: no parece válido y lo necesitamos para responderte."}
+(HTTP 400 · 1.817306s)
+
+== 8 · Memoria (seguimiento de Ana)
+{"consulta_id":"WEB-261119-60","estado":"RESPONDIDA","prioridad":"ALTA","mensaje":"Hola Ana, el Seltos EX también está disponible en Gris Acero."}
+(HTTP 200 · 16.093374s)
+
+== 9 · Ficha de un modelo sin stock en catálogo
+{"consulta_id":"WEB-261119-61","estado":"DERIVADA","prioridad":"REVISAR","mensaje":"Hola Sofía, para saber cuántas plazas tiene la Kia Carnival necesitamos confirmarlo con un asesor. Un asesor te va a contactar dentro de las 4 horas hábiles."}
+(HTTP 200 · 8.355729s)
+
+== 10 · Ficha que la base NO tiene → deriva
+{"consulta_id":"WEB-261119-62","estado":"DERIVADA","prioridad":"REVISAR","mensaje":"Hola Martín López, para conocer el consumo en ruta del Kia Sorento necesitaremos consultar la información oficial. Un asesor te va a contactar dentro de las 4 horas hábiles."}
+(HTTP 200 · 9.163211s)
+

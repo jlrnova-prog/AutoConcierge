@@ -1,0 +1,12 @@
+== 1 · RAG documentación (patentar)
+{"consulta_id":"WEB-261119-78","estado":"RESPONDIDA","prioridad":"INFO","mensaje":"Hola Marta, para patentar el auto a tu nombre necesitás tu DNI vigente (frente y dorso), constancia de CUIL o CUIT y, si el domicilio no coincide con el del DNI, una constancia de domicilio. Como estás casada, también se requiere el nombre completo y DNI de tu cónyuge. La gestión la realiza nuestra gestoría una vez que la unidad está pagada y el trámite demora entre 7 y 10 días hábiles. Podés enviarnos la documentación escaneada por mail o entregarla en el salón de ventas."}
+(HTTP 200 · 13.048277s)
+
+== 3 · Ficha técnica (PDF Kia)
+{"consulta_id":"WEB-261119-79","estado":"RESPONDIDA","prioridad":"INFO","mensaje":"Hola Lucas, el Sportage EX tiene motor 2.0 nafta MPI y potencia 154 cv. El Sportage X-Line lleva motor 2.0 diésel CRDi con 183 cv."}
+(HTTP 200 · 8.258610s)
+
+== 9 · Ficha de un modelo sin stock en catálogo
+{"consulta_id":"WEB-261119-80","estado":"DERIVADA","prioridad":"REVISAR","mensaje":"Hola Sofía, gracias por tu consulta. La cantidad de plazas de la Kia Carnival no está disponible en la información que manejamos. Un asesor te va a contactar dentro de las 4 horas hábiles."}
+(HTTP 200 · 9.285895s)
+
