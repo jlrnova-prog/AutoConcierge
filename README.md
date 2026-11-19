@@ -42,6 +42,22 @@ Auto Concierge es una concesionaria oficial Kia ficticia, el mismo caso de todas
 | [Planilla «PE3 · Auto Concierge · Base (datos ficticios)»](https://docs.google.com/spreadsheets/d/17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo/edit?usp=sharing) | **Stock** (lo consulta el agente), **Consultas Final** (registro de cada consulta: estado, prioridad, `rag_estado`, similitud, fuentes, latencia), **Config** (datos de pago ficticios, umbral), **Indexacion** (log de WF1), **Errores** (log de WF3) y **Evaluacion RAG** (corridas v1 → v3 de WF4) |
 | [Carpeta de Drive «base de conocimiento»](https://drive.google.com/drive/folders/1Dv_VRGsBsYsBf0ZkmWwTeB1zozuE_oSl?usp=sharing) | Los documentos 01–07 que indexa WF1 y las fichas técnicas originales de Kia (PDF) |
 
+**Checklist de la consigna: dónde está cada punto**
+
+| Pedido de la consigna | Dónde se cumple |
+|---|---|
+| `.json` del workflow exportado desde n8n | `workflows/` (4 archivos, sin credenciales: sección 10) |
+| Caso de negocio, ROI (tiempo ahorrado vs. costo de implementación) y límites del ROI | Sección 1 (1.2 ROI y supuestos S1–S9, 1.3 cuándo NO conviene) |
+| Al menos dos entradas / disparadores distintos | WF2: **Webhook** (formulario web) + **Gmail Trigger** (mail). Además Drive Trigger en WF1 y Sheets como herramienta (2.1) |
+| RAG: vector store + modelo de embeddings, recuperando **antes** del agente | Supabase pgvector + Ollama `nomic-embed-text` (sección 3); nodo «Buscar en la base de conocimiento» antes del agente (2.2) |
+| AI Agent con system prompt estructurado que toma decisiones reales | Sección 6 (prompt completo en bloque de código) y decisiones `derivar` / `contexto_suficiente` / `enviar_datos_pago` (5) |
+| Modelo configurado y elección local vs. nube justificada (costo, privacidad, independencia) | Sección 4 |
+| Por qué un AI Agent con RAG y no un nodo simple / consulta estática | Sección 5 |
+| Al menos dos puntos de falla y cómo se gestionan (APIs, timeout del vector store, LLM nulo) | Sección 7: 7 puntos de falla y 4 pruebas provocadas (F1–F4) |
+| Camino explícito de manejo de errores | Salidas de error + IF/Switch en WF2, «Validar salida», y WF3 con **Error Trigger** |
+| Salida a un canal real | Respuesta al formulario (HTTP), respuesta por mail en el mismo hilo, fila en Sheets y aviso al vendedor |
+| Capturas del canvas y de una ejecución exitosa | `capturas/` (sección 9): canvas `01`–`04`, ejecución exitosa `08` |
+
 ---
 
 ## 1. Caso de negocio y ROI
@@ -246,6 +262,18 @@ Se usa un **esquema combinado**: los embeddings corren en local y el LLM del age
 
 Estructura: rol, qué recibe, tarea, tipos, catálogo, reglas, cuándo derivar, datos de pago, límites, formato, ejemplos (uno por regla) y salida. No tiene llaves, porque rompen las plantillas de LangChain (aprendizaje de la PE3). La salida la valida un **Structured Output Parser** de 11 campos.
 
+**Cómo cubre lo que pide la consigna para el system prompt:**
+
+| Pedido | Sección del prompt |
+|---|---|
+| Rol y tono | «Rol» (asistente de Auto Concierge, voseo, amable) y «Formato de respuesta_cliente» |
+| Alcance | «Qué recibís» y «Tipos»: 6 tipos de consulta que puede atender |
+| Qué puede hacer | «Tarea», «Reglas de stock» y «Fichas técnicas»: responder con el CONTEXTO del RAG y la herramienta de stock |
+| Qué no puede hacer | «Límites» (no inventar, no dar precios, no pedir claves) y «Datos de pago» (nunca escribe un CBU) |
+| Ambigüedad | «Cuándo derivar» («Si dudás, derivá»), «Fichas técnicas» (si no puede asociar un dato a una versión, no lo da) y «contexto_suficiente» |
+| Fuera de alcance o manipulación | Tipo `otro` + derivar; último punto de «Límites» ante pedidos de ignorar las reglas |
+| Decisión basada en el contexto recuperado | «contexto_suficiente»: si el CONTEXTO no cubre la pregunta, no responde de memoria y deriva |
+
 **Mensaje del usuario que recibe el agente** (expresión del nodo):
 ```text
 Hoy: {{ $now.setLocale('es').toFormat("cccc dd/MM/yyyy HH:mm") }}
@@ -447,7 +475,7 @@ Todas están en la carpeta `/capturas`.
 
 | Archivo | Qué muestra |
 |---|---|
-| `01-wf1-canvas.png` | Canvas de WF1 · Indexación, ejecución completa (14 archivos, 72 fragmentos) |
+| `01-wf1-canvas.png` | Canvas de WF1 · Indexación, ejecución completa (14 archivos, 72 fragmentos; antes de sumar el documento 07, que se indexó solo: captura `05`) |
 | `02-wf2-canvas.png` | Canvas de WF2 · Atención (completo) |
 | `03-wf3-canvas.png` | Canvas de WF3 · Error Trigger |
 | `04-wf4-canvas-ejecucion.png` | Canvas de WF4 y salida de la evaluación v3 |
@@ -476,6 +504,7 @@ Todas están en la carpeta `/capturas`.
 - **Supabase:** RLS activado en las tablas nuevas. n8n usa la clave `service_role` y la clave pública `anon` no puede leer los documentos.
 - **Datos ficticios:** CBU, CUIT, alias y clientes de prueba. El repositorio tiene `.gitignore` para `.env` y archivos de credenciales.
 - **Planilla y carpeta de Drive compartidas solo como lectura** («cualquiera con el link»). Solo contienen datos ficticios: los clientes usan `@example.com`, los teléfonos son de prueba y el único mail real es el de la cuenta del curso (destino de avisos). Escribir en ellas sigue requiriendo la credencial OAuth de n8n.
+- **Webhook sin autenticación (entorno de prueba):** el endpoint corre en `localhost` y no está expuesto a internet. En producción llevaría **Header Auth** (token compartido con el formulario), CORS limitado al dominio de la concesionaria y un límite de consultas por IP o por mail.
 - **Las herramientas del agente son de solo lectura** (stock). Todas las escrituras (Sheets, Gmail, datos de pago) las hace el flujo, después de validar.
 
 ---
