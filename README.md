@@ -35,6 +35,13 @@ Auto Concierge es una concesionaria oficial Kia ficticia, el mismo caso de todas
 | `pruebas/` | Script de pruebas (`curl-pruebas.sh`), plan de pruebas y salidas de cada corrida |
 | `capturas/` | Capturas del canvas y de las ejecuciones |
 
+**Recursos en Google (solo lectura, cualquiera con el link)**
+
+| Recurso | Qué se puede verificar |
+|---|---|
+| [Planilla «PE3 · Auto Concierge · Base (datos ficticios)»](https://docs.google.com/spreadsheets/d/17FtHq_MXd2Jj8G7JlBiRbzgdOXC9diWOMkw35z2cRAo/edit?usp=sharing) | **Stock** (lo consulta el agente), **Consultas Final** (registro de cada consulta: estado, prioridad, `rag_estado`, similitud, fuentes, latencia), **Config** (datos de pago ficticios, umbral), **Indexacion** (log de WF1), **Errores** (log de WF3) y **Evaluacion RAG** (corridas v1 → v3 de WF4) |
+| [Carpeta de Drive «base de conocimiento»](https://drive.google.com/drive/folders/1Dv_VRGsBsYsBf0ZkmWwTeB1zozuE_oSl?usp=sharing) | Los documentos 01–07 que indexa WF1 y las fichas técnicas originales de Kia (PDF) |
+
 ---
 
 ## 1. Caso de negocio y ROI
@@ -468,6 +475,7 @@ Todas están en la carpeta `/capturas`.
 - **El .json exportado no tiene secretos.** n8n solo exporta el ID y el nombre de cada credencial. Revisé los 4 archivos buscando `apiKey`, `Bearer`, `password`, `secret` y `token`, sin resultados. Las claves de Groq, Supabase (service_role), Postgres y Google viven solo en las credenciales de n8n.
 - **Supabase:** RLS activado en las tablas nuevas. n8n usa la clave `service_role` y la clave pública `anon` no puede leer los documentos.
 - **Datos ficticios:** CBU, CUIT, alias y clientes de prueba. El repositorio tiene `.gitignore` para `.env` y archivos de credenciales.
+- **Planilla y carpeta de Drive compartidas solo como lectura** («cualquiera con el link»). Solo contienen datos ficticios: los clientes usan `@example.com`, los teléfonos son de prueba y el único mail real es el de la cuenta del curso (destino de avisos). Escribir en ellas sigue requiriendo la credencial OAuth de n8n.
 - **Las herramientas del agente son de solo lectura** (stock). Todas las escrituras (Sheets, Gmail, datos de pago) las hace el flujo, después de validar.
 
 ---
